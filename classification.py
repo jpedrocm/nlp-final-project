@@ -1,7 +1,15 @@
 import numpy as np
+from nltk import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import RSLPStemmer
-from nltk import word_tokenize
+from nltk.classify import SklearnClassifier
+from nltk.metrics import scores
+from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 
 GENRES = []
 STOPWORDS = stopwords.words('portuguese')
@@ -21,17 +29,57 @@ def lowercase_word(word):
 def tokenize_doc(doc):
 	return word_tokenize(doc)
 
-def create_sets(full_set, train_pct, test_pct, valid_pct = 0):
-	train_set = [], test_set = [], valid_set = []
-	#TODO
-	return (train_set, test_set, valid_set)
+def create_sets(full_set, train_pct):
+	train_set = [], test_set = []	
+	train_set = set(random.sample(full_set, int(train_pct*len(full_set))))
+	test_set = set(full_set) - train_set
+	return (train_set, test_set)
 
 def get_full_set():
-	full_set = {}
-	for genre in GENRES:
-		full_set[genre] = get_docs_from_genre(genre)
+	full_set = []
+	for genre in GENRES:	
+		full_set = map(lambda doc: (doc, genre), get_docs_from_genre(genre))
 	return full_set
 
 def get_docs_from_genre(genre):
 	#TODO
 	return []
+
+def featurize_set(given_set):
+	#TODO
+	return given_set
+
+def mlp_model(activation='relu', solver='adam', max_iter=200, validation_set=False):
+	return MLPClassifier(activation=activation, solver=solver, max_iter=max_iter, early_stopping = validation_set)
+
+def random_forest_model(num_of_trees=10, max_depth=None, num_of_cores=1):
+	return RandomForestClassifier(n_estimators=num_of_trees, max_depth=max_depth, n_jobs=num_of_cores)
+
+def multinomial_naive_bayes_model(alpha=1.0, fit_prior=True):
+	return MultinomialNB(alpha=alpha, fit_prior=fit_prior)
+
+def logistic_regression_model(max_iter=100, multi_class='ovr', num_of_cores = 1):
+	return LogisticRegression(max_iter=max_iter, multi_class=multi_class, n_jobs=num_of_cores)
+
+def linear_svc_model(max_iter=1000):
+	return LinearSVC(max_iter=max_iter)
+
+def svc_model(kernel='rbf', degree=3, coef0=0.0, max_iter=-1, decision_function_shape='ovo'):
+	return SVC(kernel=kernel, degree=degree, coef0=coef0, max_iter=max_iter, decision_function_shape=decision_function_shape)
+
+def create_classifier(sklearn_model):
+	return SklearnClassifier(sklearn_model)
+
+def train_classifier(sklearn_classifier, train_set):
+	return sklearn_classifier.train(train_set)
+
+def test_classifier(sklearn_classifier, test_set):
+	return sklearn_classifier.classify_many(test_set)
+
+def classifier_metrics(predicted_labels, correct_labels):
+	#REDO
+	acc = accuracy(correct_labels, predicted_labels)
+	prec = precision(correct_labels, predicted_labels)
+	rec = recall(correct_labels, predicted_labels)
+	f1 = f_measure(correct_labels, predicted_labels)
+	return {accuracy: acc, precision: prec, recall: rec, f_measure: f1}
