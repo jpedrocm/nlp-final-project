@@ -1,3 +1,4 @@
+import random
 import numpy as np
 from nltk import word_tokenize
 from nltk.corpus import stopwords
@@ -9,7 +10,6 @@ from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neural_network import MLPClassifier
 
 GENRES = []
 STOPWORDS = stopwords.words('portuguese')
@@ -30,6 +30,7 @@ def tokenize_doc(doc):
 	return word_tokenize(doc)
 
 def create_sets(full_set, train_pct):
+	#REDO to equally divide per genre
 	train_set = [], test_set = []	
 	train_set = set(random.sample(full_set, int(train_pct*len(full_set))))
 	test_set = set(full_set) - train_set
@@ -48,9 +49,6 @@ def get_docs_from_genre(genre):
 def featurize_set(given_set):
 	#TODO
 	return given_set
-
-def mlp_model(activation='relu', solver='adam', max_iter=200, validation_set=False):
-	return MLPClassifier(activation=activation, solver=solver, max_iter=max_iter, early_stopping = validation_set)
 
 def random_forest_model(num_of_trees=10, max_depth=None, num_of_cores=1):
 	return RandomForestClassifier(n_estimators=num_of_trees, max_depth=max_depth, n_jobs=num_of_cores)
