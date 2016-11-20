@@ -4,7 +4,7 @@ from nltk import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import RSLPStemmer
 from nltk.classify import SklearnClassifier
-from nltk.metrics import scores
+from nltk.metrics import *
 from sklearn.svm import SVC
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
@@ -75,7 +75,7 @@ def test_classifier(sklearn_classifier, test_set):
 	return sklearn_classifier.classify_many(test_set)
 
 def classifier_metrics(predicted_labels, correct_labels):
-	#REDO
+	#REDO if classifier dependent
 	acc = accuracy(correct_labels, predicted_labels)
 	prec = precision(correct_labels, predicted_labels)
 	rec = recall(correct_labels, predicted_labels)
