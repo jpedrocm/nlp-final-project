@@ -1,20 +1,24 @@
-from scrapy.spiders import Spider
 from lyrics_music.items import LyricsMusicItem
-from scrapy.http    import Request
-import re
+from scrapy.spiders import Spider
+from scrapy.http import Request
+from langdetect import detect
+import json, re, os
 
-#scrapy crawl lyricsspider  --set CLOSESPIDER_PAGECOUNT=5 -o items.json -t json
+#scrapy crawl lyricsspider  --set CLOSESPIDER_PAGECOUNT=5 
 
 class LyricsSpider(Spider):
+
+	listUrl = []
+	with open(os.path.abspath("artistspider_output.json"), 'r') as f:
+		reader = json.load(f)
+		listUrl = [links['link'] for links in list(reader)[1:] if len(links) > 0]
+
 	name = "lyricsspider"
 	allowed_domains = ["letras.mus.br"]
-	start_urls = ["https://www.letras.mus.br/mais-acessadas/mpb/"]
-
-	def make_requests_from_url(self, url):
-		return Request(url, dont_filter=True, meta = {'start_url': url})
+	start_urls = listUrl
 
 	def parse(self, response):
-		links = response.xpath("//ol[@class='top-list_mus cnt-list--col1-2']/li/a/@href").extract()
+		links = response.xpath("//div[@class='cnt-list--alp']/ul/li/a/@href").extract()
 
 		#stored already crawled links in this list
 		crawledLinks = []
@@ -29,11 +33,14 @@ class LyricsSpider(Spider):
 				crawledLinks.append(link)
 				yield Request(link, self.parse)
 
+
 		titles = response.xpath("//div[@class='cnt-head_title']")
 		item = LyricsMusicItem()
-		if(len(titles.xpath("//h1/text()").extract()) > 0):
-			item["title"] = titles.xpath("//h1/text()").extract()[0]
-			item["lyrics"] = ' '.join(titles.select("//article/p/text()").extract())
-			item["genre"] = titles.xpath("//div[@id='breadcrumb']/span/a/span/text()").extract()[1]
-			item["link"] = response.url			
-			yield item
+		if(len(titles.select("//article/p/text()").extract()) > 0):
+			isPortuguese = (detect('\n '.join(titles.select("//article/p/text()").extract())) == 'pt')
+			if(isPortuguese): #verify lyrics language before add in file
+				item["title"] = titles.xpath("//h1/text()").extract()[0]
+				item["lyrics"] = '\n '.join(titles.select("//article/p/text()").extract())
+				item["genre"] = titles.xpath("//div[@id='breadcrumb']/span/a/span/text()").extract()[1]
+				item["link"] = response.url			
+				yield item

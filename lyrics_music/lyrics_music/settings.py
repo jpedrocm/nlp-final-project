@@ -64,7 +64,7 @@ ROBOTSTXT_OBEY = True
 
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
+ITEM_PIPELINES = {'lyrics_music.pipelines.LyricsMusicPipeline':300,}
 #    'lyrics_music.pipelines.SomePipeline': 300,
 #}
 
