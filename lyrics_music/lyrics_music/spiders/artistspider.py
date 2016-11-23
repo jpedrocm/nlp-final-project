@@ -8,7 +8,9 @@ import re
 class LyricsSpider(Spider):
 	name = "artistspider"
 	allowed_domains = ["letras.mus.br"]
-	start_urls = ["https://www.letras.mus.br/mais-acessadas/mpb/"]
+	start_urls = ["https://www.letras.mus.br/mais-acessadas/rock/", "https://www.letras.mus.br/mais-acessadas/samba/",
+	"https://www.letras.mus.br/mais-acessadas/sertanejo/", "https://www.letras.mus.br/mais-acessadas/mpb/", 
+	"https://www.letras.mus.br/mais-acessadas/funk/"]
 
 	def parse(self, response):
 		links = response.xpath("//ol[@class='top-list_art']/li/a/@href").extract() #artist page
