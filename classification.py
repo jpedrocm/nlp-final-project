@@ -13,6 +13,11 @@ from sklearn.ensemble import RandomForestClassifier
 
 GENRES = []
 STOPWORDS = stopwords.words('portuguese')
+BOOLS = [True, False]
+EXPERIMENTS = [(stem, case_folding, no_stopwords, lowercase) for stem in BOOLS for case_folding in BOOLS for no_stopwords in BOOLS, for lowercase in BOOLS]
+MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
+FEATURE_TYPES = ['BINARY', 'TF', 'LOG_TF', 'TF_IDF']
+TEST_NUMBER = 0
 
 def mean(arr):
 	return np.mean(arr, dtype=np.float64)
@@ -32,17 +37,23 @@ def lowercase_word(word):
 def tokenize_doc(doc):
 	return word_tokenize(doc)
 
+def preprocess_set(given_set, stem, case_folding, no_stopwords, lowercase):
+	#TODO
+	return given_set
+
 def create_sets(full_set, train_pct):
 	#TODO 
 	#equally divide per genre based on train_pct
 	return (train_set, test_set)
 
 def get_full_set():
-	#TODO
+	#TODO 
+	#get data
 	return full_set
 
-def featurize_set(given_set):
+def featurize_set(given_set, feature_type):
 	#TODO
+	#choose a feature type and apply to docs in set
 	return given_set
 
 def random_forest_model(num_of_trees=10, max_depth=None, num_of_cores=1):
@@ -71,38 +82,46 @@ def test_classifier(sklearn_classifier, test_set):
 
 def classifier_metrics():
 	#TODO
+	#get confusion matrix and save metrics for each classifier
 	return 0
 
-def print_metrics(metrics):
-	print
-
-def test(stem, case_folding, no_stopwords, lowercase):
-	#PRE-PROCESS
-	full_set = get_full_set()
-	full_preprocessed_set = preprocess_set(full_set)
-	train_set, test_set = create_sets(full_preprocessed_set, 0.7)
-	ready_train_set = featurize_set(train_set)
-	ready_test_set = featurize_set(test_set)
-
-	for model_string in MODELS:
-		#CLASSIFICATION
-		clf = create_classifier(MODELS[model_string])
-		trained_clf = train_classifier(clf, ready_train_set)
-		tested_clf = test_classifier(trained_clf, ready_test_set)
-
-		#METRICS
-		metrics = classifier_metrics()
-		print "TEST NUMBER\n" + str(test_number)
+def write_metrics_to_file(metrics, stem, case_folding, no_stopwords, lowercase, model_name, f_type):
+		#REDO
+		#actually write to file
+		print "TEST NUMBER\n" + str(TEST_NUMBER)
 		print 'STEMMING: ' + str(stem)
 		print 'CASE-FOLDING: ' + str(case_folding)
 		print 'NO-STOPWORDS: ' + str(no_stopwords)
 		print 'LOWERCASE: ' + str(lowercase)
-		print 'CLF = ' + model_string
+		print 'CLF = ' + model_name
+		print 'TYPE = ' + f_type
 		print metrics
 
-BOOLS = [True, False]
-EXPERIMENTS = [(stem, case_folding, no_stopwords, lowercase) for stem in BOOLS for case_folding in BOOLS for no_stopwords in BOOLS, for lowercase in BOOLS]
-MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
+def test(stem, case_folding, no_stopwords, lowercase):
+	global TEST_NUMBER
+
+	#PRE-PROCESS
+	full_set = get_full_set()
+	full_preprocessed_set = preprocess_set(full_set, stem, case_folding, no_stopwords, lowercase)
+	train_set, test_set = create_sets(full_preprocessed_set, 0.7)
+
+	for f_type in FEATURE_TYPES:
+		#FEATURIZATION
+		ready_train_set = featurize_set(train_set)
+		ready_test_set = featurize_set(test_set)
+
+		for model_name in MODELS:
+			TEST_NUMBER+=1
+
+			#CLASSIFICATION
+			clf = create_classifier(MODELS[model_string])
+			trained_clf = train_classifier(clf, ready_train_set)
+			tested_clf = test_classifier(trained_clf, ready_test_set)
+
+			#METRICS
+
+			metrics = classifier_metrics()
+			write_metrics_to_file(metrics, stem, case_folding, no_stopwords, lowercase, model_name, f_type)
 
 def experiment():
 	for e in EXPERIMENTS:
