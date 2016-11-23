@@ -23,6 +23,9 @@ def std_dev(arr):
 def stem_word(word):
 	return RSLPStemmer().stem(word)
 
+def remove_stopwords_from_doc(tokenized_doc):
+	return filter(lambda word: word not in STOPWORDS, tokenized_doc)
+
 def lowercase_word(word):
 	return word.lower()
 
@@ -30,21 +33,13 @@ def tokenize_doc(doc):
 	return word_tokenize(doc)
 
 def create_sets(full_set, train_pct):
-	#REDO to equally divide per genre
-	train_set = [], test_set = []	
-	train_set = set(random.sample(full_set, int(train_pct*len(full_set))))
-	test_set = set(full_set) - train_set
+	#TODO 
+	#equally divide per genre based on train_pct
 	return (train_set, test_set)
 
 def get_full_set():
-	full_set = []
-	for genre in GENRES:	
-		full_set = map(lambda doc: (doc, genre), get_docs_from_genre(genre))
-	return full_set
-
-def get_docs_from_genre(genre):
 	#TODO
-	return []
+	return full_set
 
 def featurize_set(given_set):
 	#TODO
@@ -74,10 +69,42 @@ def train_classifier(sklearn_classifier, train_set):
 def test_classifier(sklearn_classifier, test_set):
 	return sklearn_classifier.classify_many(test_set)
 
-def classifier_metrics(predicted_labels, correct_labels):
-	#REDO if classifier dependent
-	acc = accuracy(correct_labels, predicted_labels)
-	prec = precision(correct_labels, predicted_labels)
-	rec = recall(correct_labels, predicted_labels)
-	f1 = f_measure(correct_labels, predicted_labels)
-	return {accuracy: acc, precision: prec, recall: rec, f_measure: f1}
+def classifier_metrics():
+	#TODO
+	return 0
+
+def print_metrics(metrics):
+	print
+
+def test(stem, case_folding, no_stopwords, lowercase):
+	#PRE-PROCESS
+	full_set = get_full_set()
+	full_preprocessed_set = preprocess_set(full_set)
+	train_set, test_set = create_sets(full_preprocessed_set, 0.7)
+	ready_train_set = featurize_set(train_set)
+	ready_test_set = featurize_set(test_set)
+
+	for model_string in MODELS:
+		#CLASSIFICATION
+		clf = create_classifier(MODELS[model_string])
+		trained_clf = train_classifier(clf, ready_train_set)
+		tested_clf = test_classifier(trained_clf, ready_test_set)
+
+		#METRICS
+		metrics = classifier_metrics()
+		print "TEST NUMBER\n" + str(test_number)
+		print 'STEMMING: ' + str(stem)
+		print 'CASE-FOLDING: ' + str(case_folding)
+		print 'NO-STOPWORDS: ' + str(no_stopwords)
+		print 'LOWERCASE: ' + str(lowercase)
+		print 'CLF = ' + model_string
+		print metrics
+
+BOOLS = [True, False]
+EXPERIMENTS = [(stem, case_folding, no_stopwords, lowercase) for stem in BOOLS for case_folding in BOOLS for no_stopwords in BOOLS, for lowercase in BOOLS]
+MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
+
+def experiment():
+	for e in EXPERIMENTS:
+		stem = e[0], case_folding = e[1], no_stopwords = e[2], lowercase = e[3]
+		test(stem, case_folding, no_stopwords, lowercase)
