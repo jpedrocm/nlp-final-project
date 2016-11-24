@@ -14,10 +14,10 @@ from sklearn.ensemble import RandomForestClassifier
 GENRES = []
 STOPWORDS = stopwords.words('portuguese')
 BOOLS = [True, False]
-EXPERIMENTS = [(stem, case_folding, no_stopwords, lowercase) for stem in BOOLS for case_folding in BOOLS for no_stopwords in BOOLS, for lowercase in BOOLS]
-MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
+EXPERIMENTS = [(stem, case_folding, no_stopwords, lowercase) for stem in BOOLS for case_folding in BOOLS for no_stopwords in BOOLS for lowercase in BOOLS]
 FEATURE_TYPES = ['BINARY', 'TF', 'LOG_TF', 'TF_IDF']
 TEST_NUMBER = 0
+METRICS_FILE = open('metrics_file.out', 'w')
 
 def mean(arr):
 	return np.mean(arr, dtype=np.float64)
@@ -80,22 +80,55 @@ def train_classifier(sklearn_classifier, train_set):
 def test_classifier(sklearn_classifier, test_set):
 	return sklearn_classifier.classify_many(test_set)
 
-def classifier_metrics():
-	#TODO
-	#get confusion matrix and save metrics for each classifier
-	return 0
+def transform_to_genre_labels(instances_labels, genre):
+	return [label if label==genre else 'non_'+genre for label in instances_labels]
+
+def classifier_metrics(reference_list, test_list, genre):
+	#row = ref, col = test
+	non_genre = 'non_'+genre
+
+	conf_matrix = ConfusionMatrix(reference_list, test_list)
+	tp = conf_matrix[genre][genre]
+	tn = conf_matrix[non_genre][non_genre]
+	fp = conf_matrix[non_genre][genre]
+	fn = conf_matrix[genre][non_genre]
+	
+	metric = {}
+	metric[genre] = {}
+	metric[genre]['tp'] = tp
+	metric[genre]['tn'] = tn
+	metric[genre]['fn'] = fn
+	metric[genre]['fp'] = fp
+	metric[genre]['accuracy'] = accuracy
+	metric[genre]['precision'] = precision
+	metric[genre]['recall'] = recall
+	metric[genre]['f1'] = f1
+
+	return metric
 
 def write_metrics_to_file(metrics, stem, case_folding, no_stopwords, lowercase, model_name, f_type):
-		#REDO
-		#actually write to file
-		print "TEST NUMBER\n" + str(TEST_NUMBER)
-		print 'STEMMING: ' + str(stem)
-		print 'CASE-FOLDING: ' + str(case_folding)
-		print 'NO-STOPWORDS: ' + str(no_stopwords)
-		print 'LOWERCASE: ' + str(lowercase)
-		print 'CLF = ' + model_name
-		print 'TYPE = ' + f_type
-		print metrics
+		global METRICS_FILE
+
+		METRICS_FILE.write("TEST NUMBER\n" + str(TEST_NUMBER))
+		METRICS_FILE.write('STEMMING: ' + str(stem))
+		METRICS_FILE.write('CASE-FOLDING: ' + str(case_folding))
+		METRICS_FILE.write('NO-STOPWORDS: ' + str(no_stopwords))
+		METRICS_FILE.write('LOWERCASE: ' + str(lowercase))
+		METRICS_FILE.write('CLF = ' + model_name)
+		METRICS_FILE.write('TYPE = ' + f_type)
+		METRICS_FILE.write('\n')
+
+		for (genre, metric) in metrics:
+			METRICS_FILE.write('GENRE: '+ genre)
+			METRICS_FILE.write('TP = ' + str(metric['tp']))
+			METRICS_FILE.write('TN = ' + str(metric['tn']))
+			METRICS_FILE.write('FP = ' + str(metric['fp']))
+			METRICS_FILE.write('FN = ' + str(metric['fn']))
+			METRICS_FILE.write('ACCURACY = ' + str(metric['accuracy']))
+			METRICS_FILE.write('PRECISION = ' + str(metric['precision']))
+			METRICS_FILE.write('RECALL = ' + str(metric['recall']))
+			METRICS_FILE.write('F-MEASURE = ' + str(metric['f1']))
+			METRICS_FILE.write('\n')
 
 def test(stem, case_folding, no_stopwords, lowercase):
 	global TEST_NUMBER
@@ -104,6 +137,8 @@ def test(stem, case_folding, no_stopwords, lowercase):
 	full_set = get_full_set()
 	full_preprocessed_set = preprocess_set(full_set, stem, case_folding, no_stopwords, lowercase)
 	train_set, test_set = create_sets(full_preprocessed_set, 0.7)
+
+	correct_labels = 0 #TODO get labels from test set
 
 	for f_type in FEATURE_TYPES:
 		#FEATURIZATION
@@ -114,14 +149,19 @@ def test(stem, case_folding, no_stopwords, lowercase):
 			TEST_NUMBER+=1
 
 			#CLASSIFICATION
-			clf = create_classifier(MODELS[model_string])
+			clf = create_classifier(MODELS[model_name])
 			trained_clf = train_classifier(clf, ready_train_set)
-			tested_clf = test_classifier(trained_clf, ready_test_set)
+			predicted_labels = test_classifier(trained_clf, ready_test_set)
 
 			#METRICS
-
-			metrics = classifier_metrics()
+			metrics = []
+			for genre in GENRES:
+				transformed_predicted_labels = transform_to_genre_labels(predicted_labels, genre)
+				transformed_correct_labels = transform_to_genre_labels(correct_labels, genre)
+				metrics.append(classifier_metrics(transformed_correct_labels, transformed_predicted_labels, genre))
 			write_metrics_to_file(metrics, stem, case_folding, no_stopwords, lowercase, model_name, f_type)
+
+MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
 
 def experiment():
 	for e in EXPERIMENTS:
