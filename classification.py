@@ -102,7 +102,7 @@ def test_classifier(sklearn_classifier, test_set):
 def transform_to_genre_labels(instances_labels, genre):
 	return [label if label==genre else 'non_'+genre for label in instances_labels]
 
-def classifier_metrics(reference_list, test_list, genre):
+def save_genre_metrics(reference_list, test_list, genre):
 	#row = ref, col = test
 	non_genre = 'non_'+genre
 
@@ -111,43 +111,65 @@ def classifier_metrics(reference_list, test_list, genre):
 	tn = conf_matrix[non_genre][non_genre]
 	fp = conf_matrix[non_genre][genre]
 	fn = conf_matrix[genre][non_genre]
+
+	accuracy = float(tp+tn)/(tp+tn+fp+fn)
+	precision = float(tp)/(tp+fp)
+	recall = float(tp)/(tp+fn)
+	f1 = float(2*precision*recall)/(precision+recall)
 	
 	metric = {}
-	metric[genre] = {}
-	metric[genre]['tp'] = tp
-	metric[genre]['tn'] = tn
-	metric[genre]['fn'] = fn
-	metric[genre]['fp'] = fp
-	metric[genre]['accuracy'] = accuracy
-	metric[genre]['precision'] = precision
-	metric[genre]['recall'] = recall
-	metric[genre]['f1'] = f1
+	metric['tp'] = tp
+	metric['tn'] = tn
+	metric['fn'] = fn
+	metric['fp'] = fp
+	metric['accuracy'] = accuracy
+	metric['precision'] = precision
+	metric['recall'] = recall
+	metric['f1'] = f1
 
 	return metric
 
-def write_metrics_to_file(metrics, stem, case_folding, no_stopwords, lowercase, model_name, f_type):
-		global METRICS_FILE
+def calculate_classifier_metrics(genres_metrics):
+	#TODO calculate macro and micro
 
-		METRICS_FILE.write("TEST NUMBER\n" + str(TEST_NUMBER))
-		METRICS_FILE.write('STEMMING: ' + str(stem))
-		METRICS_FILE.write('CASE-FOLDING: ' + str(case_folding))
-		METRICS_FILE.write('NO-STOPWORDS: ' + str(no_stopwords))
-		METRICS_FILE.write('LOWERCASE: ' + str(lowercase))
-		METRICS_FILE.write('CLF = ' + model_name)
-		METRICS_FILE.write('TYPE = ' + f_type)
-		METRICS_FILE.write('\n')
+def write_case_to_file(stem, case_folding, no_stopwords, lowercase, model_name, f_type):
+	global METRICS_FILE
 
-		for (genre, metric) in metrics:
-			METRICS_FILE.write('GENRE: '+ genre)
-			METRICS_FILE.write('TP = ' + str(metric['tp']))
-			METRICS_FILE.write('TN = ' + str(metric['tn']))
-			METRICS_FILE.write('FP = ' + str(metric['fp']))
-			METRICS_FILE.write('FN = ' + str(metric['fn']))
-			METRICS_FILE.write('ACCURACY = ' + str(metric['accuracy']))
-			METRICS_FILE.write('PRECISION = ' + str(metric['precision']))
-			METRICS_FILE.write('RECALL = ' + str(metric['recall']))
-			METRICS_FILE.write('F-MEASURE = ' + str(metric['f1']))
-			METRICS_FILE.write('\n')
+	METRICS_FILE.write("TEST NUMBER\n" + str(TEST_NUMBER))
+	METRICS_FILE.write('STEMMING: ' + str(stem))
+	METRICS_FILE.write('CASE-FOLDING: ' + str(case_folding))
+	METRICS_FILE.write('NO-STOPWORDS: ' + str(no_stopwords))
+	METRICS_FILE.write('LOWERCASE: ' + str(lowercase))
+	METRICS_FILE.write('CLF = ' + model_name)
+	METRICS_FILE.write('TYPE = ' + f_type)
+	METRICS_FILE.write('\n')
+
+def write_metric_to_file(metric):
+	global METRICS_FILE
+
+	METRICS_FILE.write('TP = ' + str(metric['tp']))
+	METRICS_FILE.write('TN = ' + str(metric['tn']))
+	METRICS_FILE.write('FP = ' + str(metric['fp']))
+	METRICS_FILE.write('FN = ' + str(metric['fn']))
+	METRICS_FILE.write('ACCURACY = ' + str(metric['accuracy']))
+	METRICS_FILE.write('PRECISION = ' + str(metric['precision']))
+	METRICS_FILE.write('RECALL = ' + str(metric['recall']))
+	METRICS_FILE.write('F-MEASURE = ' + str(metric['f1']))
+	METRICS_FILE.write('\n')
+
+def write_genre_metrics_to_file(metrics):
+	global METRICS_FILE
+
+	for (genre, metric) in metrics:
+		METRICS_FILE.write('GENRE: '+ genre)
+		write_metric_to_file(metric)
+
+def write_classifier_metrics_to_file(metrics):
+	global METRICS_FILE
+
+	for (m_type, metric) in metrics:
+		METRICS_FILE.write('TYPE: '+ m_type)
+		write_metric_to_file(metric)
 
 def test(stem, case_folding, no_stopwords, lowercase):
 	global TEST_NUMBER
@@ -173,12 +195,16 @@ def test(stem, case_folding, no_stopwords, lowercase):
 			predicted_labels = test_classifier(trained_clf, ready_test_set)
 
 			#METRICS
-			metrics = []
+			genres_metrics = {}
 			for genre in GENRES:
 				transformed_predicted_labels = transform_to_genre_labels(predicted_labels, genre)
 				transformed_correct_labels = transform_to_genre_labels(correct_labels, genre)
-				metrics.append(classifier_metrics(transformed_correct_labels, transformed_predicted_labels, genre))
-			write_metrics_to_file(metrics, stem, case_folding, no_stopwords, lowercase, model_name, f_type)
+				genres_metrics[genre] = save_genre_metrics(transformed_correct_labels, transformed_predicted_labels, genre)
+
+			metrics = calculate_classifier_metrics(genres_metrics)
+			write_case_to_file(stem, case_folding, no_stopwords, lowercase, model_name, f_type)
+			write_genre_metrics_to_file(genres_metrics)
+			write_classifier_metrics_to_file(metrics)
 
 MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
 
@@ -186,3 +212,4 @@ def experiment():
 	for e in EXPERIMENTS:
 		stem = e[0], case_folding = e[1], no_stopwords = e[2], lowercase = e[3]
 		test(stem, case_folding, no_stopwords, lowercase)
+	METRICS_FILE.close()
