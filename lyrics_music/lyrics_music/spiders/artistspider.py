@@ -8,7 +8,7 @@ import re
 class LyricsSpider(Spider):
 	name = "artistspider"
 	allowed_domains = ["letras.mus.br"]
-	start_urls = ["https://www.letras.mus.br/mais-acessadas/rock/", "https://www.letras.mus.br/mais-acessadas/samba/",
+	start_urls = ["https://www.letras.mus.br/mais-acessadas/axe/", "https://www.letras.mus.br/mais-acessadas/samba/",
 	"https://www.letras.mus.br/mais-acessadas/sertanejo/", "https://www.letras.mus.br/mais-acessadas/mpb/", 
 	"https://www.letras.mus.br/mais-acessadas/funk/"]
 
