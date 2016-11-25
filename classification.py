@@ -1,4 +1,6 @@
-import random
+# coding: utf-8
+
+import random, os, json
 import numpy as np
 from nltk import word_tokenize
 from nltk.corpus import stopwords
@@ -11,7 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
 
-GENRES = []
+GENRES = [u"Axé", "Funk Carioca", "MPB", "Samba", "Sertanejo"]
 STOPWORDS = stopwords.words('portuguese')
 BOOLS = [True, False]
 EXPERIMENTS = [(stem, case_folding, no_stopwords, lowercase) for stem in BOOLS for case_folding in BOOLS for no_stopwords in BOOLS for lowercase in BOOLS]
@@ -47,8 +49,25 @@ def create_sets(full_set, train_pct):
 	return (train_set, test_set)
 
 def get_full_set():
-	#TODO 
-	#get data
+	full_set = {}
+	for genre in GENRES:
+		full_set[genre] = list()
+
+	genre_files = list()
+	min_file_size = 5000
+
+	data_path = os.getcwd() + "\lyrics_music\Data\lyrics\\"
+	for filename in os.listdir(data_path):
+		filepath = data_path+filename
+		cur_json = json.load(open(filepath, 'r'))
+		genre_files.append(cur_json)
+		min_file_size = min(min_file_size, len(cur_json))
+
+	for genre_file in genre_files:
+		filtered_genre_file = random.sample(genre_file, min_file_size)
+		for item in filtered_genre_file:
+			document_pair = (item['title'], item['lyrics'])
+			full_set[item['genre']].append(document_pair)
 	return full_set
 
 def featurize_set(given_set, feature_type):
