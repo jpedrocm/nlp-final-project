@@ -130,7 +130,36 @@ def save_genre_metrics(reference_list, test_list, genre):
 	return metric
 
 def calculate_classifier_metrics(genres_metrics):
-	#TODO calculate macro and micro
+	metrics = {}
+	num_of_classes = len(genres_metrics)
+
+	tp_sum = sum([genres_metrics[genre]['tp'] for genre in genres_metrics])
+	tn_sum = sum([genres_metrics[genre]['tn'] for genre in genres_metrics])
+	fp_sum = sum([genres_metrics[genre]['fp'] for genre in genres_metrics])
+	fn_sum = sum([genres_metrics[genre]['fn'] for genre in genres_metrics])
+
+	metrics['macro'] = {}
+	metrics['macro']['tp'] = tp_sum/num_of_classes
+	metrics['macro']['tn'] = tn_sum/num_of_classes
+	metrics['macro']['fp'] = fp_sum/num_of_classes
+	metrics['macro']['fn'] = fn_sum/num_of_classes
+	metrics['macro']['accuracy'] = sum([genres_metrics[genre]['accuracy'] for genre in genres_metrics])/num_of_classes
+	metrics['macro']['precision'] = sum([genres_metrics[genre]['precision'] for genre in genres_metrics])/num_of_classes
+	metrics['macro']['recall'] = sum([genres_metrics[genre]['recall'] for genre in genres_metrics])/num_of_classes
+	metrics['macro']['f1'] = sum([genres_metrics[genre]['f1'] for genre in genres_metrics])/num_of_classes
+
+	micro_precision = tp_sum/(tp_sum+fp_sum)
+	micro_recall =	tp_sum/(tp_sum+fn_sum)
+
+	metrics['micro']= {}
+	metrics['micro']['tp'] = tp_sum
+	metrics['micro']['tn'] = tn_sum
+	metrics['micro']['fp'] = fp_sum
+	metrics['micro']['fn'] = fn_sum
+	metrics['micro']['accuracy'] = 
+	metrics['micro']['precision'] = micro_precision
+	metrics['micro']['recall'] = micro_recall
+	metrics['micro']['f1'] = 2*micro_precision*micro_recall/(micro_precision+micro_recall)
 
 def write_case_to_file(stem, case_folding, no_stopwords, lowercase, model_name, f_type):
 	global METRICS_FILE
