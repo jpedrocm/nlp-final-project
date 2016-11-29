@@ -1,8 +1,8 @@
 package proj;
 
 public class Word {
-	private String pa;
-	private int[] pos;
+	private String pa;//palavra
+	private int[] pos;//posiçoes no documento
 	private int tam = 1;
 	int freq = 0;
 	

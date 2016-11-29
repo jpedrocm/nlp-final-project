@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class Documents {
-	private ArrayList<Document> files;
+	private ArrayList<Document> files;// paths dos arquivos
 	private int count = 0;
 	
 	public Documents(ArrayList<String> s) throws IOException{
@@ -38,5 +38,6 @@ public class Documents {
 		}
 		return num;
 	}
+
 
 }

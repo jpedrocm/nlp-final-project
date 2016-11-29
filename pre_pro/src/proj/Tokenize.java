@@ -14,7 +14,7 @@ public class Tokenize {
 	private ArrayList<String> comp;
 	private int count = 0;
 	
-	public Tokenize(){
+	public Tokenize() throws IOException{
 		comp = new ArrayList<String>() ;
 	}
 	
@@ -84,7 +84,9 @@ public class Tokenize {
 	// A word was found; the value is in sval 
 	word = st.sval;
 	word = word.toLowerCase();
+	if(Exe.stw.eStopWord(word)==true){
 	to.addToken(word);
+	}
 	//System.out.println(word);
 	break; 
 	case '"': 
