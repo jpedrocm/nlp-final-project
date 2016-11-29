@@ -20,14 +20,22 @@ public class Word {
 		}
 	}
 	
+	public int[] posiçoes(){
+		return pos;
+	}
+	
 	public int ocor(){
 		return freq;
 	}
 	
-	public boolean existe(Word[] words,String w){
+	public String getPa(){
+		return pa;
+	}
+	
+	public boolean existe(Word [] words,String w){
 		boolean b = false;
 		for(int i=0;i<words.length;i++){
-			if(words[i].pa==w){
+			if(words[i].getPa()==w){
 				b = true;
 				break;
 			}
