@@ -80,8 +80,11 @@ def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords)
 	#TODO
 	#choose a feature type and apply to docs in set
 	stop_list = None
+	stem_tokenizer = None
 	if remove_stopwords:
 		stop_list = PT_STOPWORDS
+	if stem:
+		stem_tokenizer = 0 #createOurStemTokenizer
 	
 	return given_set
 
@@ -214,8 +217,8 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 
 	for f_type in FEATURE_TYPES:
 		#FEATURIZATION
-		ready_train_set = featurize_set(train_set, stem, case_folding, remove_stopwords)
-		ready_test_set = featurize_set(test_set, stem, case_folding, remove_stopwords)
+		ready_train_set = featurize_set(train_set, f_type, stem, case_folding, remove_stopwords)
+		ready_test_set = featurize_set(test_set, f_type, stem, case_folding, remove_stopwords)
 
 		gold_labels = 0 #TODO get labels from test set
 
@@ -250,7 +253,10 @@ def experiment():
 
 	#PROCESS
 	for e in EXPERIMENTS:
-		stem = e[0], case_folding = e[1], remove_stopwords = e[2]
+		stem = e[0]
+		case_folding = e[1]
+		remove_stopwords = e[2]
+
 		test(train_set, test_set, stem, case_folding, remove_stopwords)
 	METRICS_FILE.close()
 
