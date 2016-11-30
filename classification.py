@@ -12,10 +12,12 @@ from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-GENRES = [u"Axé", "Funk Carioca", "MPB", "Samba", "Sertanejo"]
+GENRES = ["Sertanejo", "Funk Carioca", u"Axé",  "MPB", "Samba"]
 PT_STOPWORDS = stopwords.words('portuguese')
+PT_STEMMER = RSLPStemmer()
 BOOLS = [True, False]
 EXPERIMENTS = [(stem, case_folding, remove_stopwords) for stem in BOOLS for case_folding in BOOLS for remove_stopwords in BOOLS]
 FEATURE_TYPES = ['BINARY', 'TF', 'LOG_TF', 'TF_IDF']
@@ -65,7 +67,7 @@ def std_dev(arr):
 	return np.std(arr, dtype=np.float64)
 
 def stem_word(word):
-	return RSLPStemmer().stem(word)
+	return PT_STEMMER.stem(word)
 
 def remove_stopwords_from_doc(tokenized_doc):
 	return filter(lambda word: word not in PT_STOPWORDS, tokenized_doc)
@@ -76,19 +78,46 @@ def lowercase_word(word):
 def tokenize_doc(doc):
 	return word_tokenize(doc)
 
+def stem_tokenizer(doc):
+	return [PT_STEMMER.stem(t) for t in word_tokenize(doc)]
+
 def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords):
-	#TODO
-	#choose a feature type and apply to docs in set
+	#TODO use training vocabaulary for testing set
 	stop_list = None
-	stem_tokenizer = None
+	chosen_tokenizer = None
 	if remove_stopwords:
 		stop_list = PT_STOPWORDS
 	if stem:
-		stem_tokenizer = 0 #createOurStemTokenizer
-	
-	return given_set
+		chosen_tokenizer = stem_tokenizer
 
-def random_forest_model(num_of_trees=10, max_depth=None, num_of_cores=1):
+	documents = list()
+	doc_genres = list()
+	for genre in given_set:
+		documents.extend(given_set[genre])
+		doc_genres.extend([genre for i in range(len(given_set[genre]))])
+
+	vectorizer = None
+	if feature_type=='BINARY':
+		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, binary = True, 
+			dtype = np.float64, norm=None, use_idf=False, smooth_idf=False)
+	elif feature_type =='TF':
+		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64,
+		 norm=None, use_idf=False, smooth_idf=False)
+	elif feature_type =='LOG_TF':
+		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64, 
+		 norm=None, use_idf=False, sublinear_tf=True, smooth_idf=False)
+	else:
+		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64)
+
+	featurized_docs_raw_format = vectorizer.fit_transform(documents)
+	
+	transformizer = DictVectorizer(dtype=np.float64).fit([vectorizer.vocabulary_])
+	featurized_docs = transformizer.inverse_transform(featurized_docs_raw_format)
+
+	featurized_set = [(featurized_docs[i], doc_genres[i]) for i in range(len(documents))]
+	return featurized_set
+
+def random_forest_model(num_of_trees=10, max_depth=None, num_of_cores = 1):
 	return RandomForestClassifier(n_estimators=num_of_trees, max_depth=max_depth, n_jobs=num_of_cores)
 
 def multinomial_naive_bayes_model(alpha=1.0, fit_prior=True):
@@ -100,7 +129,7 @@ def logistic_regression_model(max_iter=100, multi_class='ovr', num_of_cores = 1)
 def linear_svc_model(max_iter=1000):
 	return LinearSVC(max_iter=max_iter)
 
-def svc_model(kernel='rbf', degree=3, coef0=0.0, max_iter=-1, decision_function_shape='ovo'):
+def svc_model(kernel='rbf', degree=3, coef0=0.0, max_iter=-1, decision_function_shape='ovr'):
 	return SVC(kernel=kernel, degree=degree, coef0=coef0, max_iter=max_iter, decision_function_shape=decision_function_shape)
 
 def create_classifier(sklearn_model):
@@ -220,9 +249,8 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 		ready_train_set = featurize_set(train_set, f_type, stem, case_folding, remove_stopwords)
 		ready_test_set = featurize_set(test_set, f_type, stem, case_folding, remove_stopwords)
 
-		gold_labels = 0 #TODO get labels from test set
-
-		raise NameError
+		gold_test_labels = map(lambda (d,l): l, ready_test_set)
+		test_documents = map(lambda (d,l): d, ready_test_set)
 
 		for model_name in MODELS:
 			TEST_NUMBER+=1
@@ -230,14 +258,15 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			#CLASSIFICATION
 			clf = create_classifier(MODELS[model_name])
 			trained_clf = train_classifier(clf, ready_train_set)
-			predicted_labels = test_classifier(trained_clf, ready_test_set)
+			predicted_labels = test_classifier(trained_clf, test_documents)
+			raise NameError
 
 			#METRICS
 			genres_metrics = {}
 			for genre in GENRES:
 				transformed_predicted_labels = transform_to_genre_labels(predicted_labels, genre)
-				transformed_gold_labels = transform_to_genre_labels(gold_labels, genre)
-				genres_metrics[genre] = save_genre_metrics(transformed_gold_labels, transformed_predicted_labels, genre)
+				transformed_gold_test_labels = transform_to_genre_labels(gold_test_labels, genre)
+				genres_metrics[genre] = save_genre_metrics(transformed_test_labels, transformed_predicted_labels, genre)
 
 			metrics = calculate_classifier_metrics(genres_metrics)
 			write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
