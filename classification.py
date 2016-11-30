@@ -12,6 +12,7 @@ from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
 GENRES = [u"Axé", "Funk Carioca", "MPB", "Samba", "Sertanejo"]
 STOPWORDS = stopwords.words('portuguese')
@@ -39,15 +40,6 @@ def lowercase_word(word):
 def tokenize_doc(doc):
 	return word_tokenize(doc)
 
-def preprocess_set(given_set, stem, case_folding, no_stopwords, lowercase):
-	#TODO
-	return given_set
-
-def create_sets(full_set, train_pct):
-	#TODO 
-	#equally divide per genre based on train_pct
-	return (train_set, test_set)
-
 def get_full_set():
 	full_set = {}
 	for genre in GENRES:
@@ -66,11 +58,25 @@ def get_full_set():
 	for genre_file in genre_files:
 		filtered_genre_file = random.sample(genre_file, min_file_size)
 		for item in filtered_genre_file:
-			document_pair = (item['title'], item['lyrics'])
-			full_set[item['genre']].append(document_pair)
+			document = item['lyrics']
+			full_set[item['genre']].append(document)
 	return full_set
 
-def featurize_set(given_set, feature_type):
+def create_sets(full_set, train_pct):
+	train_set = {}
+	test_set = {}
+	for genre in full_set:
+		train_set[genre] = list()
+		test_set[genre] = list()
+
+		train_sample = random.sample(full_set[genre], int(len(full_set[genre])*train_pct))
+		test_sample = list(set(full_set[genre]) - set(train_sample))
+
+		train_set[genre].extend(train_sample)
+		test_set[genre].extend(test_sample)
+	return (train_set, test_set)
+
+def featurize_set(given_set, feature_type, stem, case_folding, no_stopwords, lowercase):
 	#TODO
 	#choose a feature type and apply to docs in set
 	return given_set
@@ -156,7 +162,7 @@ def calculate_classifier_metrics(genres_metrics):
 	metrics['micro']['tn'] = tn_sum
 	metrics['micro']['fp'] = fp_sum
 	metrics['micro']['fn'] = fn_sum
-	metrics['micro']['accuracy'] = 
+	metrics['micro']['accuracy'] = (tp_sum+tn_sum)/(tp_sum+tn_sum+fp_sum+fn_sum)
 	metrics['micro']['precision'] = micro_precision
 	metrics['micro']['recall'] = micro_recall
 	metrics['micro']['f1'] = 2*micro_precision*micro_recall/(micro_precision+micro_recall)
@@ -200,20 +206,17 @@ def write_classifier_metrics_to_file(metrics):
 		METRICS_FILE.write('TYPE: '+ m_type)
 		write_metric_to_file(metric)
 
-def test(stem, case_folding, no_stopwords, lowercase):
+def test(train_set, test_set, stem, case_folding, no_stopwords, lowercase):
 	global TEST_NUMBER
-
-	#PRE-PROCESS
-	full_set = get_full_set()
-	full_preprocessed_set = preprocess_set(full_set, stem, case_folding, no_stopwords, lowercase)
-	train_set, test_set = create_sets(full_preprocessed_set, 0.7)
-
-	correct_labels = 0 #TODO get labels from test set
 
 	for f_type in FEATURE_TYPES:
 		#FEATURIZATION
-		ready_train_set = featurize_set(train_set)
-		ready_test_set = featurize_set(test_set)
+		ready_train_set = featurize_set(train_set, stem, case_folding, no_stopwords, lowercase)
+		ready_test_set = featurize_set(test_set, stem, case_folding, no_stopwords, lowercase)
+
+		gold_labels = 0 #TODO get labels from test set
+
+		raise NameError
 
 		for model_name in MODELS:
 			TEST_NUMBER+=1
@@ -227,8 +230,8 @@ def test(stem, case_folding, no_stopwords, lowercase):
 			genres_metrics = {}
 			for genre in GENRES:
 				transformed_predicted_labels = transform_to_genre_labels(predicted_labels, genre)
-				transformed_correct_labels = transform_to_genre_labels(correct_labels, genre)
-				genres_metrics[genre] = save_genre_metrics(transformed_correct_labels, transformed_predicted_labels, genre)
+				transformed_gold_labels = transform_to_genre_labels(gold_labels, genre)
+				genres_metrics[genre] = save_genre_metrics(transformed_gold_labels, transformed_predicted_labels, genre)
 
 			metrics = calculate_classifier_metrics(genres_metrics)
 			write_case_to_file(stem, case_folding, no_stopwords, lowercase, model_name, f_type)
@@ -238,7 +241,14 @@ def test(stem, case_folding, no_stopwords, lowercase):
 MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
 
 def experiment():
+	#PRE-PROCESS
+	full_set = get_full_set()
+	train_set, test_set = create_sets(full_set, 0.7)
+
+	#PROCESS
 	for e in EXPERIMENTS:
 		stem = e[0], case_folding = e[1], no_stopwords = e[2], lowercase = e[3]
-		test(stem, case_folding, no_stopwords, lowercase)
+		test(train_set, test_set, stem, case_folding, no_stopwords, lowercase)
 	METRICS_FILE.close()
+
+experiment()
