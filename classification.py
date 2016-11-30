@@ -15,30 +15,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
 GENRES = [u"Axé", "Funk Carioca", "MPB", "Samba", "Sertanejo"]
-STOPWORDS = stopwords.words('portuguese')
+PT_STOPWORDS = stopwords.words('portuguese')
 BOOLS = [True, False]
-EXPERIMENTS = [(stem, case_folding, no_stopwords, lowercase) for stem in BOOLS for case_folding in BOOLS for no_stopwords in BOOLS for lowercase in BOOLS]
+EXPERIMENTS = [(stem, case_folding, remove_stopwords) for stem in BOOLS for case_folding in BOOLS for remove_stopwords in BOOLS]
 FEATURE_TYPES = ['BINARY', 'TF', 'LOG_TF', 'TF_IDF']
 TEST_NUMBER = 0
 METRICS_FILE = open('metrics_file.out', 'w')
-
-def mean(arr):
-	return np.mean(arr, dtype=np.float64)
-
-def std_dev(arr):
-	return np.std(arr, dtype=np.float64)
-
-def stem_word(word):
-	return RSLPStemmer().stem(word)
-
-def remove_stopwords_from_doc(tokenized_doc):
-	return filter(lambda word: word not in STOPWORDS, tokenized_doc)
-
-def lowercase_word(word):
-	return word.lower()
-
-def tokenize_doc(doc):
-	return word_tokenize(doc)
 
 def get_full_set():
 	full_set = {}
@@ -76,9 +58,31 @@ def create_sets(full_set, train_pct):
 		test_set[genre].extend(test_sample)
 	return (train_set, test_set)
 
-def featurize_set(given_set, feature_type, stem, case_folding, no_stopwords, lowercase):
+def mean(arr):
+	return np.mean(arr, dtype=np.float64)
+
+def std_dev(arr):
+	return np.std(arr, dtype=np.float64)
+
+def stem_word(word):
+	return RSLPStemmer().stem(word)
+
+def remove_stopwords_from_doc(tokenized_doc):
+	return filter(lambda word: word not in PT_STOPWORDS, tokenized_doc)
+
+def lowercase_word(word):
+	return word.lower()
+
+def tokenize_doc(doc):
+	return word_tokenize(doc)
+
+def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords):
 	#TODO
 	#choose a feature type and apply to docs in set
+	stop_list = None
+	if remove_stopwords:
+		stop_list = PT_STOPWORDS
+	
 	return given_set
 
 def random_forest_model(num_of_trees=10, max_depth=None, num_of_cores=1):
@@ -167,14 +171,13 @@ def calculate_classifier_metrics(genres_metrics):
 	metrics['micro']['recall'] = micro_recall
 	metrics['micro']['f1'] = 2*micro_precision*micro_recall/(micro_precision+micro_recall)
 
-def write_case_to_file(stem, case_folding, no_stopwords, lowercase, model_name, f_type):
+def write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type):
 	global METRICS_FILE
 
 	METRICS_FILE.write("TEST NUMBER\n" + str(TEST_NUMBER))
 	METRICS_FILE.write('STEMMING: ' + str(stem))
 	METRICS_FILE.write('CASE-FOLDING: ' + str(case_folding))
-	METRICS_FILE.write('NO-STOPWORDS: ' + str(no_stopwords))
-	METRICS_FILE.write('LOWERCASE: ' + str(lowercase))
+	METRICS_FILE.write('REMOVE-STOPWORDS: ' + str(remove_stopwords))
 	METRICS_FILE.write('CLF = ' + model_name)
 	METRICS_FILE.write('TYPE = ' + f_type)
 	METRICS_FILE.write('\n')
@@ -206,13 +209,13 @@ def write_classifier_metrics_to_file(metrics):
 		METRICS_FILE.write('TYPE: '+ m_type)
 		write_metric_to_file(metric)
 
-def test(train_set, test_set, stem, case_folding, no_stopwords, lowercase):
+def test(train_set, test_set, stem, case_folding, remove_stopwords):
 	global TEST_NUMBER
 
 	for f_type in FEATURE_TYPES:
 		#FEATURIZATION
-		ready_train_set = featurize_set(train_set, stem, case_folding, no_stopwords, lowercase)
-		ready_test_set = featurize_set(test_set, stem, case_folding, no_stopwords, lowercase)
+		ready_train_set = featurize_set(train_set, stem, case_folding, remove_stopwords)
+		ready_test_set = featurize_set(test_set, stem, case_folding, remove_stopwords)
 
 		gold_labels = 0 #TODO get labels from test set
 
@@ -234,7 +237,7 @@ def test(train_set, test_set, stem, case_folding, no_stopwords, lowercase):
 				genres_metrics[genre] = save_genre_metrics(transformed_gold_labels, transformed_predicted_labels, genre)
 
 			metrics = calculate_classifier_metrics(genres_metrics)
-			write_case_to_file(stem, case_folding, no_stopwords, lowercase, model_name, f_type)
+			write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
 			write_genre_metrics_to_file(genres_metrics)
 			write_classifier_metrics_to_file(metrics)
 
@@ -247,8 +250,8 @@ def experiment():
 
 	#PROCESS
 	for e in EXPERIMENTS:
-		stem = e[0], case_folding = e[1], no_stopwords = e[2], lowercase = e[3]
-		test(train_set, test_set, stem, case_folding, no_stopwords, lowercase)
+		stem = e[0], case_folding = e[1], remove_stopwords = e[2]
+		test(train_set, test_set, stem, case_folding, remove_stopwords)
 	METRICS_FILE.close()
 
 experiment()
