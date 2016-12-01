@@ -149,10 +149,10 @@ def save_genre_metrics(reference_list, test_list, genre):
 	non_genre = 'non_'+genre
 
 	conf_matrix = ConfusionMatrix(reference_list, test_list)
-	tp = conf_matrix[genre][genre]
-	tn = conf_matrix[non_genre][non_genre]
-	fp = conf_matrix[non_genre][genre]
-	fn = conf_matrix[genre][non_genre]
+	tp = conf_matrix[genre,genre]
+	tn = conf_matrix[non_genre,non_genre]
+	fp = conf_matrix[non_genre,genre]
+	fn = conf_matrix[genre,non_genre]
 
 	accuracy = float(tp+tn)/(tp+tn+fp+fn)
 	precision = float(tp)/(tp+fp)
@@ -259,15 +259,16 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			clf = create_classifier(MODELS[model_name])
 			trained_clf = train_classifier(clf, ready_train_set)
 			predicted_labels = test_classifier(trained_clf, test_documents)
-			raise NameError
 
 			#METRICS
 			genres_metrics = {}
 			for genre in GENRES:
 				transformed_predicted_labels = transform_to_genre_labels(predicted_labels, genre)
 				transformed_gold_test_labels = transform_to_genre_labels(gold_test_labels, genre)
-				genres_metrics[genre] = save_genre_metrics(transformed_test_labels, transformed_predicted_labels, genre)
+				genres_metrics[genre] = save_genre_metrics(transformed_gold_test_labels, transformed_predicted_labels, genre)
 
+			print genres_metrics
+			raise NameError
 			metrics = calculate_classifier_metrics(genres_metrics)
 			write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
 			write_genre_metrics_to_file(genres_metrics)
