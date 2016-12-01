@@ -173,12 +173,12 @@ def save_genre_metrics(reference_list, test_list, genre):
 
 def calculate_classifier_metrics(genres_metrics):
 	metrics = {}
-	num_of_classes = len(genres_metrics)
+	num_of_classes = float(len(genres_metrics))
 
-	tp_sum = sum([genres_metrics[genre]['tp'] for genre in genres_metrics])
-	tn_sum = sum([genres_metrics[genre]['tn'] for genre in genres_metrics])
-	fp_sum = sum([genres_metrics[genre]['fp'] for genre in genres_metrics])
-	fn_sum = sum([genres_metrics[genre]['fn'] for genre in genres_metrics])
+	tp_sum = float(sum([genres_metrics[genre]['tp'] for genre in genres_metrics]))
+	tn_sum = float(sum([genres_metrics[genre]['tn'] for genre in genres_metrics]))
+	fp_sum = float(sum([genres_metrics[genre]['fp'] for genre in genres_metrics]))
+	fn_sum = float(sum([genres_metrics[genre]['fn'] for genre in genres_metrics]))
 
 	metrics['macro'] = {}
 	metrics['macro']['tp'] = tp_sum/num_of_classes
@@ -203,42 +203,44 @@ def calculate_classifier_metrics(genres_metrics):
 	metrics['micro']['recall'] = micro_recall
 	metrics['micro']['f1'] = 2*micro_precision*micro_recall/(micro_precision+micro_recall)
 
+	return metrics
+
 def write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type):
 	global METRICS_FILE
 
-	METRICS_FILE.write("TEST NUMBER\n" + str(TEST_NUMBER))
-	METRICS_FILE.write('STEMMING: ' + str(stem))
-	METRICS_FILE.write('CASE-FOLDING: ' + str(case_folding))
-	METRICS_FILE.write('REMOVE-STOPWORDS: ' + str(remove_stopwords))
-	METRICS_FILE.write('CLF = ' + model_name)
-	METRICS_FILE.write('TYPE = ' + f_type)
+	METRICS_FILE.write("TEST NUMBER " + str(TEST_NUMBER) +'\n')
+	METRICS_FILE.write('STEMMING: ' + str(stem)+'\n')
+	METRICS_FILE.write('CASE-FOLDING: ' + str(case_folding)+'\n')
+	METRICS_FILE.write('REMOVE-STOPWORDS: ' + str(remove_stopwords)+'\n')
+	METRICS_FILE.write('CLF = ' + model_name+'\n')
+	METRICS_FILE.write('FEATURE = ' + f_type+'\n')
 	METRICS_FILE.write('\n')
 
 def write_metric_to_file(metric):
 	global METRICS_FILE
 
-	METRICS_FILE.write('TP = ' + str(metric['tp']))
-	METRICS_FILE.write('TN = ' + str(metric['tn']))
-	METRICS_FILE.write('FP = ' + str(metric['fp']))
-	METRICS_FILE.write('FN = ' + str(metric['fn']))
-	METRICS_FILE.write('ACCURACY = ' + str(metric['accuracy']))
-	METRICS_FILE.write('PRECISION = ' + str(metric['precision']))
-	METRICS_FILE.write('RECALL = ' + str(metric['recall']))
-	METRICS_FILE.write('F-MEASURE = ' + str(metric['f1']))
+	METRICS_FILE.write('TP = ' + str(metric['tp'])+'\n')
+	METRICS_FILE.write('TN = ' + str(metric['tn'])+'\n')
+	METRICS_FILE.write('FP = ' + str(metric['fp'])+'\n')
+	METRICS_FILE.write('FN = ' + str(metric['fn'])+'\n')
+	METRICS_FILE.write('ACCURACY = ' + str(metric['accuracy'])+'\n')
+	METRICS_FILE.write('PRECISION = ' + str(metric['precision'])+'\n')
+	METRICS_FILE.write('RECALL = ' + str(metric['recall'])+'\n')
+	METRICS_FILE.write('F-MEASURE = ' + str(metric['f1'])+'\n')
 	METRICS_FILE.write('\n')
 
 def write_genre_metrics_to_file(metrics):
 	global METRICS_FILE
 
-	for (genre, metric) in metrics:
-		METRICS_FILE.write('GENRE: '+ genre)
+	for (genre, metric) in metrics.iteritems():
+		METRICS_FILE.write('GENRE: '+ genre.encode("utf-8")+'\n')
 		write_metric_to_file(metric)
 
 def write_classifier_metrics_to_file(metrics):
 	global METRICS_FILE
 
-	for (m_type, metric) in metrics:
-		METRICS_FILE.write('TYPE: '+ m_type)
+	for (m_type, metric) in metrics.iteritems():
+		METRICS_FILE.write('TYPE: '+ m_type+'\n')
 		write_metric_to_file(metric)
 
 def test(train_set, test_set, stem, case_folding, remove_stopwords):
@@ -267,8 +269,6 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 				transformed_gold_test_labels = transform_to_genre_labels(gold_test_labels, genre)
 				genres_metrics[genre] = save_genre_metrics(transformed_gold_test_labels, transformed_predicted_labels, genre)
 
-			print genres_metrics
-			raise NameError
 			metrics = calculate_classifier_metrics(genres_metrics)
 			write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
 			write_genre_metrics_to_file(genres_metrics)
