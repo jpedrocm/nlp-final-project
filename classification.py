@@ -18,9 +18,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 GENRES = ["Sertanejo", "Funk Carioca", u"Axé",  "MPB", "Samba"]
 PT_STOPWORDS = stopwords.words('portuguese')
 PT_STEMMER = RSLPStemmer()
-BOOLS = [True] #, False
+BOOLS = [True, False] 
 EXPERIMENTS = [(stem, case_folding, remove_stopwords) for stem in BOOLS for case_folding in BOOLS for remove_stopwords in BOOLS]
-FEATURE_TYPES = ['BINARY', 'TF'] #, 'TF', 'LOG_TF', 'TF_IDF'
+FEATURE_TYPES = ['BINARY'] #, 'TF', 'LOG_TF', 'TF_IDF'
 TEST_NUMBER = 0
 METRICS_FILE = open('metrics_file.json', 'w')
 
@@ -281,8 +281,7 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			json_data['genres_metrics'] = write_genre_metrics_to_file(genres_metrics)
 			json_data['classifier_metrics'] = write_classifier_metrics_to_file(metrics)
 			json_output.append(json_data)
-
-	json.dump(ret, METRICS_FILE)
+	return json_output
 
 MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
 
@@ -290,14 +289,15 @@ def experiment():
 	#PRE-PROCESS
 	full_set = get_full_set()
 	train_set, test_set = create_sets(full_set, 0.7)
-
+	merge_results = []
 	#PROCESS
 	for e in EXPERIMENTS:
 		stem = e[0]
 		case_folding = e[1]
 		remove_stopwords = e[2]
 
-		test(train_set, test_set, stem, case_folding, remove_stopwords)
+		merge_results += test(train_set, test_set, stem, case_folding, remove_stopwords)
+	json.dump(merge_results, METRICS_FILE)
 	METRICS_FILE.close()
 
 experiment()
