@@ -15,6 +15,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+M_FILENAME = 'metrics_file_with_voc.out'
 GENRES = ["Sertanejo", "Funk Carioca", u"Axé",  "MPB", "Samba"]
 PT_STOPWORDS = stopwords.words('portuguese')
 PT_STEMMER = RSLPStemmer()
@@ -22,7 +23,7 @@ BOOLS = [True, False]
 EXPERIMENTS = [(stem, case_folding, remove_stopwords) for stem in BOOLS for case_folding in BOOLS for remove_stopwords in BOOLS]
 FEATURE_TYPES = ['BINARY', 'TF', 'LOG_TF', 'TF_IDF']
 TEST_NUMBER = 0
-METRICS_FILE = open('metrics_file.out', 'w')
+METRICS_FILE = open(M_FILENAME, 'w')
 
 def get_full_set():
 	full_set = {}
@@ -81,7 +82,7 @@ def tokenize_doc(doc):
 def stem_tokenizer(doc):
 	return [PT_STEMMER.stem(t) for t in word_tokenize(doc)]
 
-def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords):
+def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords, vocabulary = None):
 	#TODO use training vocabaulary for testing set
 	stop_list = None
 	chosen_tokenizer = None
@@ -98,23 +99,24 @@ def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords)
 
 	vectorizer = None
 	if feature_type=='BINARY':
-		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, binary = True, 
-			dtype = np.float64, norm=None, use_idf=False, smooth_idf=False)
+		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, binary = True, dtype = np.float64,
+		 norm=None, use_idf=False, smooth_idf=False, vocabulary = vocabulary)
 	elif feature_type =='TF':
-		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64,
-		 norm=None, use_idf=False, smooth_idf=False)
+		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64, norm=None, 
+			use_idf=False, smooth_idf=False, vocabulary = vocabulary)
 	elif feature_type =='LOG_TF':
-		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64, 
-		 norm=None, use_idf=False, sublinear_tf=True, smooth_idf=False)
+		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64, norm=None,
+		 use_idf=False, sublinear_tf=True, smooth_idf=False, vocabulary = vocabulary)
 	else:
-		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64)
+		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64, vocabulary = vocabulary)
 
 	featurized_docs_raw_format = vectorizer.fit_transform(documents)
 	
 	transformizer = DictVectorizer(dtype=np.float64).fit([vectorizer.vocabulary_])
 	featurized_docs = transformizer.inverse_transform(featurized_docs_raw_format)
-
 	featurized_set = [(featurized_docs[i], doc_genres[i]) for i in range(len(documents))]
+	if vocabulary == None:
+		return featurized_set, vectorizer.vocabulary_
 	return featurized_set
 
 def random_forest_model(num_of_trees=10, max_depth=None, num_of_cores = 1):
@@ -248,8 +250,8 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 
 	for f_type in FEATURE_TYPES:
 		#FEATURIZATION
-		ready_train_set = featurize_set(train_set, f_type, stem, case_folding, remove_stopwords)
-		ready_test_set = featurize_set(test_set, f_type, stem, case_folding, remove_stopwords)
+		ready_train_set, vocabulary = featurize_set(train_set, f_type, stem, case_folding, remove_stopwords)
+		ready_test_set = featurize_set(test_set, f_type, stem, case_folding, remove_stopwords, vocabulary)
 
 		gold_test_labels = map(lambda (d,l): l, ready_test_set)
 		test_documents = map(lambda (d,l): d, ready_test_set)
