@@ -20,7 +20,7 @@ PT_STOPWORDS = stopwords.words('portuguese')
 PT_STEMMER = RSLPStemmer()
 BOOLS = [True] #, False
 EXPERIMENTS = [(stem, case_folding, remove_stopwords) for stem in BOOLS for case_folding in BOOLS for remove_stopwords in BOOLS]
-FEATURE_TYPES = ['BINARY'] #, 'TF', 'LOG_TF', 'TF_IDF'
+FEATURE_TYPES = ['BINARY', 'TF'] #, 'TF', 'LOG_TF', 'TF_IDF'
 TEST_NUMBER = 0
 METRICS_FILE = open('metrics_file.json', 'w')
 
@@ -250,6 +250,7 @@ def write_classifier_metrics_to_file(metrics):
 
 def test(train_set, test_set, stem, case_folding, remove_stopwords):
 	global TEST_NUMBER
+	json_output = []
 
 	for f_type in FEATURE_TYPES:
 		#FEATURIZATION
@@ -279,8 +280,9 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			json_data['test_details'] = write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
 			json_data['genres_metrics'] = write_genre_metrics_to_file(genres_metrics)
 			json_data['classifier_metrics'] = write_classifier_metrics_to_file(metrics)
+			json_output.append(json_data)
 
-			json.dump(json_data, METRICS_FILE)
+	json.dump(ret, METRICS_FILE)
 
 MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
 
