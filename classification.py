@@ -15,11 +15,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-M_FILENAME = 'metrics_file_with_voc.out'
+M_FILENAME = 'metrics_file.json'
 GENRES = ["Sertanejo", "Funk Carioca", u"Axé",  "MPB", "Samba"]
 PT_STOPWORDS = stopwords.words('portuguese')
 PT_STEMMER = RSLPStemmer()
-BOOLS = [True, False]
+BOOLS = [True, False] 
 EXPERIMENTS = [(stem, case_folding, remove_stopwords) for stem in BOOLS for case_folding in BOOLS for remove_stopwords in BOOLS]
 FEATURE_TYPES = ['BINARY', 'TF', 'LOG_TF', 'TF_IDF']
 TEST_NUMBER = 0
@@ -33,7 +33,7 @@ def get_full_set():
 	genre_files = list()
 	min_file_size = 5000
 
-	data_path = os.getcwd() + "\lyrics_music\Data\lyrics\\"
+	data_path = os.getcwd() + "/lyrics_music/Data/lyrics/"
 	for filename in os.listdir(data_path):
 		filepath = data_path+filename
 		cur_json = json.load(open(filepath, 'r'))
@@ -83,7 +83,6 @@ def stem_tokenizer(doc):
 	return [PT_STEMMER.stem(t) for t in word_tokenize(doc)]
 
 def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords, vocabulary = None):
-	#TODO use training vocabaulary for testing set
 	stop_list = None
 	chosen_tokenizer = None
 	if remove_stopwords:
@@ -208,45 +207,51 @@ def calculate_classifier_metrics(genres_metrics):
 	return metrics
 
 def write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type):
-	global METRICS_FILE
+	data = {}
 
-	METRICS_FILE.write("TEST NUMBER " + str(TEST_NUMBER) +'\n')
-	METRICS_FILE.write('STEMMING: ' + str(stem)+'\n')
-	METRICS_FILE.write('CASE-FOLDING: ' + str(case_folding)+'\n')
-	METRICS_FILE.write('REMOVE-STOPWORDS: ' + str(remove_stopwords)+'\n')
-	METRICS_FILE.write('CLF = ' + model_name+'\n')
-	METRICS_FILE.write('FEATURE = ' + f_type+'\n')
-	METRICS_FILE.write('\n')
+	data['test_number'] = str(TEST_NUMBER)
+	data['stemming'] = str(stem)
+	data['case-folding'] = str(case_folding)
+	data['remove_stopwords'] = str(remove_stopwords)
+	data['clf'] = model_name
+	data['feature'] = f_type
+	return data
 
 def write_metric_to_file(metric):
-	global METRICS_FILE
+	data = {}
 
-	METRICS_FILE.write('TP = ' + str(metric['tp'])+'\n')
-	METRICS_FILE.write('TN = ' + str(metric['tn'])+'\n')
-	METRICS_FILE.write('FP = ' + str(metric['fp'])+'\n')
-	METRICS_FILE.write('FN = ' + str(metric['fn'])+'\n')
-	METRICS_FILE.write('ACCURACY = ' + str(metric['accuracy'])+'\n')
-	METRICS_FILE.write('PRECISION = ' + str(metric['precision'])+'\n')
-	METRICS_FILE.write('RECALL = ' + str(metric['recall'])+'\n')
-	METRICS_FILE.write('F-MEASURE = ' + str(metric['f1'])+'\n')
-	METRICS_FILE.write('\n')
+	data['tp'] = str(metric['tp'])
+	data['tn'] = str(metric['tn'])
+	data['fp'] = str(metric['fp'])
+	data['fn'] = str(metric['fn'])
+	data['accuracy'] = str(metric['accuracy'])
+	data['precision'] = str(metric['precision'])
+	data['recall'] = str(metric['recall'])
+	data['f-measure'] = str(metric['f1'])
+
+	return data
 
 def write_genre_metrics_to_file(metrics):
-	global METRICS_FILE
+	output = []
 
 	for (genre, metric) in metrics.iteritems():
-		METRICS_FILE.write('GENRE: '+ genre.encode("utf-8")+'\n')
-		write_metric_to_file(metric)
+		data = {}
+		data['genre'] = genre.encode('utf-8')
+		data['metrics'] = write_metric_to_file(metric)
+		output.append(data)
+	return output
 
 def write_classifier_metrics_to_file(metrics):
-	global METRICS_FILE
-
+	output = []
 	for (m_type, metric) in metrics.iteritems():
-		METRICS_FILE.write('TYPE: '+ m_type+'\n')
-		write_metric_to_file(metric)
+		data = {}
+		data[m_type] = write_metric_to_file(metric)
+		output.append(data)
+	return output
 
 def test(train_set, test_set, stem, case_folding, remove_stopwords):
 	global TEST_NUMBER
+	json_output = []
 
 	for f_type in FEATURE_TYPES:
 		#FEATURIZATION
@@ -273,10 +278,12 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 				genres_metrics[genre] = save_genre_metrics(transformed_gold_test_labels, transformed_predicted_labels, genre)
 
 			metrics = calculate_classifier_metrics(genres_metrics)
-			write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
-			write_genre_metrics_to_file(genres_metrics)
-			write_classifier_metrics_to_file(metrics)
-			print str(time.time()-start)
+			json_data = {}
+			json_data['test_details'] = write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
+			json_data['genres_metrics'] = write_genre_metrics_to_file(genres_metrics)
+			json_data['classifier_metrics'] = write_classifier_metrics_to_file(metrics)
+			json_output.append(json_data)
+	return json_output
 
 MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model(), 'LOGISTIC REGRESSION DEFAULT': logistic_regression_model(num_of_cores=2),
 'SVM DEFAULT': svc_model(), 'LINEAR SVM DEFAULT': linear_svc_model(), 'RANDOM FOREST DEFAULT': random_forest_model(num_of_cores=2)}
@@ -285,14 +292,15 @@ def experiment():
 	#PRE-PROCESS
 	full_set = get_full_set()
 	train_set, test_set = create_sets(full_set, 0.7)
-
+	merge_results = []
 	#PROCESS
 	for e in EXPERIMENTS:
 		stem = e[0]
 		case_folding = e[1]
 		remove_stopwords = e[2]
 
-		test(train_set, test_set, stem, case_folding, remove_stopwords)
+		merge_results += test(train_set, test_set, stem, case_folding, remove_stopwords)
+	json.dump(merge_results, METRICS_FILE)
 	METRICS_FILE.close()
 
 experiment()
