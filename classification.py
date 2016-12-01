@@ -1,6 +1,6 @@
 # coding: utf-8
 
-import random, os, json
+import random, os, json, time
 import numpy as np
 from nltk import word_tokenize
 from nltk.corpus import stopwords
@@ -255,6 +255,7 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 		test_documents = map(lambda (d,l): d, ready_test_set)
 
 		for model_name in MODELS:
+			start = time.time()
 			TEST_NUMBER+=1
 
 			#CLASSIFICATION
@@ -273,8 +274,10 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
 			write_genre_metrics_to_file(genres_metrics)
 			write_classifier_metrics_to_file(metrics)
+			print str(time.time()-start)
 
-MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
+MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model(), 'LOGISTIC REGRESSION DEFAULT': logistic_regression_model(num_of_cores=2),
+'SVM DEFAULT': svc_model(), 'LINEAR SVM DEFAULT': linear_svc_model(), 'RANDOM FOREST DEFAULT': random_forest_model(num_of_cores=2)}
 
 def experiment():
 	#PRE-PROCESS
