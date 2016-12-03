@@ -181,6 +181,9 @@ def calculate_classifier_metrics(genres_metrics):
 	fp_sum = float(sum([genres_metrics[genre]['fp'] for genre in genres_metrics]))
 	fn_sum = float(sum([genres_metrics[genre]['fn'] for genre in genres_metrics]))
 
+	metrics['general'] = {}
+	metrics['general']['accuracy'] = (tp_sum*2)/(2*tp_sum + fp_sum + fn_sum)
+
 	metrics['macro'] = {}
 	metrics['macro']['tp'] = tp_sum/num_of_classes
 	metrics['macro']['tn'] = tn_sum/num_of_classes
@@ -245,7 +248,10 @@ def write_classifier_metrics_to_file(metrics):
 	output = []
 	for (m_type, metric) in metrics.iteritems():
 		data = {}
-		data[m_type] = write_metric_to_file(metric)
+		if(m_type == 'general'):
+			data[m_type] = metric
+		else:
+			data[m_type] = write_metric_to_file(metric)
 		output.append(data)
 	return output
 
@@ -273,8 +279,6 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			#METRICS
 			genres_metrics = {}
 			for genre in GENRES:
-				#transformed_predicted_labels = transform_to_genre_labels(predicted_labels, genre)
-				#transformed_gold_test_labels = transform_to_genre_labels(gold_test_labels, genre)
 				genres_metrics[genre] = save_genre_metrics(gold_test_labels, predicted_labels, genre)
 
 			
