@@ -130,8 +130,8 @@ def logistic_regression_model(max_iter=100, multi_class='ovr', num_of_cores = 1)
 def linear_svc_model(max_iter=1000):
 	return LinearSVC(max_iter=max_iter)
 
-def svc_model(kernel='rbf', degree=3, coef0=0.0, max_iter=-1, decision_function_shape='ovr'):
-	return SVC(kernel=kernel, degree=degree, coef0=coef0, max_iter=max_iter, decision_function_shape=decision_function_shape)
+def svc_model(C=1.0,gamma='auto',kernel='rbf', degree=3, coef0=0.0, max_iter=-1, decision_function_shape='ovr'):
+	return SVC(C=C, gamma=gamma,kernel=kernel, degree=degree, coef0=coef0, max_iter=max_iter, decision_function_shape=decision_function_shape)
 
 def create_classifier(sklearn_model):
 	return SklearnClassifier(sklearn_model)
@@ -264,6 +264,7 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 		for model_name in MODELS:
 			start = time.time()
 			TEST_NUMBER+=1
+			print TEST_NUMBER
 
 			#CLASSIFICATION
 			clf = create_classifier(MODELS[model_name])
@@ -278,6 +279,7 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 				genres_metrics[genre] = save_genre_metrics(transformed_gold_test_labels, transformed_predicted_labels, genre)
 
 			metrics = calculate_classifier_metrics(genres_metrics)
+			print metrics
 			json_data = {}
 			json_data['test_details'] = write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
 			json_data['genres_metrics'] = write_genre_metrics_to_file(genres_metrics)
@@ -285,8 +287,9 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			json_output.append(json_data)
 	return json_output
 
-MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model(), 'LOGISTIC REGRESSION DEFAULT': logistic_regression_model(num_of_cores=2),
-'SVM DEFAULT': svc_model(), 'LINEAR SVM DEFAULT': linear_svc_model(), 'RANDOM FOREST DEFAULT': random_forest_model(num_of_cores=2)}
+MODELS = {#'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model(), 'LOGISTIC REGRESSION DEFAULT': logistic_regression_model(num_of_cores=2),
+'SVM DEFAULT': svc_model(C=23.0, gamma = 0.001)#, 'LINEAR SVM DEFAULT': linear_svc_model(), 'RANDOM FOREST DEFAULT': random_forest_model(num_of_cores=2)
+}
 
 def experiment():
 	#PRE-PROCESS
