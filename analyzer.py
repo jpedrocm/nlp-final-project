@@ -8,25 +8,27 @@ def get_data():
 def filter_strategies(given_list, stem=None, rmv_stopwords=None, folding=None, feature=None, clf=None):
 	filtered_list = given_list
 	if stem != None:
-		filtered_list = filter(lambda d: d['test_details']['stemming']==str(stem), given_list)
+		filtered_list = filter(lambda d: d['test_details']['stemming']==str(stem), filtered_list)
 	if rmv_stopwords != None:
-		filtered_list = filter(lambda d: d['test_details']['remove_stopwords']==str(rmv_stopwords), given_list)
+		filtered_list = filter(lambda d: d['test_details']['remove_stopwords']==str(rmv_stopwords), filtered_list)
 	if folding != None:
-		filtered_list = filter(lambda d: d['test_details']["case-folding"]==str(folding), given_list)
+		filtered_list = filter(lambda d: d['test_details']["case-folding"]==str(folding), filtered_list)
 	if feature != None:
-		filtered_list = filter(lambda d: d['test_details']['feature']==feature, given_list)
+		filtered_list = filter(lambda d: d['test_details']['feature']==feature, filtered_list)
 	if clf != None:
-		filtered_list = filter(lambda d: d['test_details']['clf']==clf, given_list)
+		filtered_list = filter(lambda d: d['test_details']['clf']==clf, filtered_list)
 	return filtered_list
 
 def sort_strategies(given_list, decreasing):
-	return sorted(given_list, key=lambda k: k['classifier_metrics']['general']['accuracy'], reverse=decreasing)
+	return sorted(given_list, key=lambda k: k['classifier_metrics'][2]['general']['accuracy'], reverse=decreasing)
 
 def analyze():
 	data = get_data()
-	data_filt = filter_strategies(data)
+	data_filt = filter_strategies(data, stem = True, rmv_stopwords = True, folding = True, feature = 'TF_IDF')
 	data_sort = sort_strategies(data_filt, decreasing=True)
 	for item in data_sort:
-		print item[test_details]
+		print item['test_details']
+		print item['classifier_metrics'][2]['general']['accuracy']
+		print ""
 
 analyze()
