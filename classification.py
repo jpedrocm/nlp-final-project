@@ -19,7 +19,7 @@ M_FILENAME = 'metrics_file.json'
 GENRES = ["Sertanejo", "Funk Carioca", u"Axé",  "MPB", "Samba"]
 PT_STOPWORDS = stopwords.words('portuguese')
 PT_STEMMER = RSLPStemmer()
-BOOLS = [True, False] 
+BOOLS = [True, False]
 EXPERIMENTS = [(stem, case_folding, remove_stopwords) for stem in BOOLS for case_folding in BOOLS for remove_stopwords in BOOLS]
 FEATURE_TYPES = ['BINARY', 'TF', 'LOG_TF', 'TF_IDF']
 TEST_NUMBER = 0
@@ -147,14 +147,14 @@ def transform_to_genre_labels(instances_labels, genre):
 
 def save_genre_metrics(reference_list, test_list, genre):
 	#row = ref, col = test
-	non_genre = 'non_'+genre
 
 	conf_matrix = ConfusionMatrix(reference_list, test_list)
+	print conf_matrix
 	tp = conf_matrix[genre,genre]
-	tn = conf_matrix[non_genre,non_genre]
-	fp = conf_matrix[non_genre,genre]
-	fn = conf_matrix[genre,non_genre]
-
+	tn = sum([conf_matrix[i, i] for i in GENRES if i != genre])
+	fn = sum([conf_matrix[genre, i] for i in GENRES if i != genre])
+	fp = sum([conf_matrix[i, genre] for i in GENRES if i != genre])
+	
 	accuracy = float(tp+tn)/(tp+tn+fp+fn)
 	precision = float(tp)/(tp+fp)
 	recall = float(tp)/(tp+fn)
@@ -171,6 +171,7 @@ def save_genre_metrics(reference_list, test_list, genre):
 	metric['f1'] = f1
 
 	return metric
+	
 
 def calculate_classifier_metrics(genres_metrics):
 	metrics = {}
@@ -254,7 +255,7 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 	json_output = []
 
 	for f_type in FEATURE_TYPES:
-		#FEATURIZATION
+		print "FEATURIZATION"
 		ready_train_set, vocabulary = featurize_set(train_set, f_type, stem, case_folding, remove_stopwords)
 		ready_test_set = featurize_set(test_set, f_type, stem, case_folding, remove_stopwords, vocabulary)
 
@@ -265,28 +266,29 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			start = time.time()
 			TEST_NUMBER+=1
 
-			#CLASSIFICATION
+			print "CLASSIFICATION"
 			clf = create_classifier(MODELS[model_name])
 			trained_clf = train_classifier(clf, ready_train_set)
 			predicted_labels = test_classifier(trained_clf, test_documents)
 
-			#METRICS
+			print "METRICS"
 			genres_metrics = {}
 			for genre in GENRES:
-				transformed_predicted_labels = transform_to_genre_labels(predicted_labels, genre)
-				transformed_gold_test_labels = transform_to_genre_labels(gold_test_labels, genre)
-				genres_metrics[genre] = save_genre_metrics(transformed_gold_test_labels, transformed_predicted_labels, genre)
+				#transformed_predicted_labels = transform_to_genre_labels(predicted_labels, genre)
+				#transformed_gold_test_labels = transform_to_genre_labels(gold_test_labels, genre)
+				genres_metrics[genre] = save_genre_metrics(gold_test_labels, predicted_labels, genre)
 
+			
 			metrics = calculate_classifier_metrics(genres_metrics)
 			json_data = {}
 			json_data['test_details'] = write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
 			json_data['genres_metrics'] = write_genre_metrics_to_file(genres_metrics)
 			json_data['classifier_metrics'] = write_classifier_metrics_to_file(metrics)
 			json_output.append(json_data)
+			
 	return json_output
 
-MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model(), 'LOGISTIC REGRESSION DEFAULT': logistic_regression_model(num_of_cores=2),
-'SVM DEFAULT': svc_model(), 'LINEAR SVM DEFAULT': linear_svc_model(), 'RANDOM FOREST DEFAULT': random_forest_model(num_of_cores=2)}
+MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
 
 def experiment():
 	#PRE-PROCESS
