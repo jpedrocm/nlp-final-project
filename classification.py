@@ -149,7 +149,6 @@ def save_genre_metrics(reference_list, test_list, genre):
 	#row = ref, col = test
 
 	conf_matrix = ConfusionMatrix(reference_list, test_list)
-	print conf_matrix
 	tp = conf_matrix[genre,genre]
 	tn = sum([conf_matrix[i, i] for i in GENRES if i != genre])
 	fn = sum([conf_matrix[genre, i] for i in GENRES if i != genre])
@@ -255,7 +254,7 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 	json_output = []
 
 	for f_type in FEATURE_TYPES:
-		print "FEATURIZATION"
+		#FEATURIZATION
 		ready_train_set, vocabulary = featurize_set(train_set, f_type, stem, case_folding, remove_stopwords)
 		ready_test_set = featurize_set(test_set, f_type, stem, case_folding, remove_stopwords, vocabulary)
 
@@ -266,12 +265,12 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			start = time.time()
 			TEST_NUMBER+=1
 
-			print "CLASSIFICATION"
+			#CLASSIFICATION
 			clf = create_classifier(MODELS[model_name])
 			trained_clf = train_classifier(clf, ready_train_set)
 			predicted_labels = test_classifier(trained_clf, test_documents)
 
-			print "METRICS"
+			#METRICS
 			genres_metrics = {}
 			for genre in GENRES:
 				#transformed_predicted_labels = transform_to_genre_labels(predicted_labels, genre)
@@ -288,7 +287,8 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			
 	return json_output
 
-MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model()}
+MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model(), 'LOGISTIC REGRESSION DEFAULT': logistic_regression_model(num_of_cores=2),
+-'SVM DEFAULT': svc_model(), 'LINEAR SVM DEFAULT': linear_svc_model(), 'RANDOM FOREST DEFAULT': random_forest_model(num_of_cores=2)}
 
 def experiment():
 	#PRE-PROCESS
