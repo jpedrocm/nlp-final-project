@@ -295,7 +295,7 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 
 
 MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model(), 'LOGISTIC REGRESSION DEFAULT': logistic_regression_model(num_of_cores=2),
-'SVM DEFAULT': svc_model(C=23.0, gamma = 0.001), 'LINEAR SVM DEFAULT': linear_svc_model(), 'RANDOM FOREST DEFAULT': random_forest_model(num_of_cores=2)}
+'SVM DEFAULT': svc_model(C=23.0, gamma = 0.001), 'LINEAR SVM DEFAULT': linear_svc_model(), 'RANDOM FOREST DEFAULT': random_forest_model(num_of_trees = 100, num_of_cores=2)}
 
 def experiment():
 	#PRE-PROCESS
