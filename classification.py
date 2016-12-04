@@ -15,7 +15,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-M_FILENAME = 'metrics_file_tunning_done.json'
+M_FILENAME = 'metrics_file_tunning_done_new.json'
 GENRES = ["Sertanejo", "Funk Carioca", u"Axé",  "MPB", "Samba"]
 PT_STOPWORDS = stopwords.words('portuguese')
 PT_STEMMER = RSLPStemmer()
@@ -271,7 +271,6 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 		for model_name in MODELS:
 			start = time.time()
 			TEST_NUMBER+=1
-			print TEST_NUMBER
 
 			#CLASSIFICATION
 			clf = create_classifier(MODELS[model_name])
@@ -291,7 +290,6 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 			json_data['classifier_metrics'] = write_classifier_metrics_to_file(metrics)
 			print json_data['test_details']
 			print metrics['general']['accuracy']
-			print metrics['micro']['f1']
 			print metrics['macro']['f1']
 			json_output.append(json_data)
 			
