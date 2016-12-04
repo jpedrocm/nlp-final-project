@@ -24,11 +24,13 @@ def sort_strategies(given_list, decreasing):
 
 def analyze():
 	data = get_data()
-	data_filt = filter_strategies(data, stem = True, rmv_stopwords = True, folding = True, feature = 'TF_IDF')
+	data_filt = filter_strategies(data, stem = None, rmv_stopwords = None, folding = None, feature = None, clf = "LOGISTIC REGRESSION DEFAULT")
 	data_sort = sort_strategies(data_filt, decreasing=True)
+	fi = open('analysis.txt', 'w')
 	for item in data_sort:
-		print item['test_details']
-		print item['classifier_metrics'][2]['general']['accuracy']
-		print ""
+		fi.write(str(item['test_details']))
+		fi.write(str(item['classifier_metrics'][2]['general']['accuracy']))
+		fi.write('\n')
+	fi.close()
 
 analyze()
