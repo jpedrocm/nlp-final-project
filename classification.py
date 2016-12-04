@@ -15,7 +15,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-M_FILENAME = 'metrics_file.json'
+M_FILENAME = 'metrics_file_tunning_done.json'
 GENRES = ["Sertanejo", "Funk Carioca", u"Axé",  "MPB", "Samba"]
 PT_STOPWORDS = stopwords.words('portuguese')
 PT_STEMMER = RSLPStemmer()
@@ -82,7 +82,7 @@ def tokenize_doc(doc):
 def stem_tokenizer(doc):
 	return [PT_STEMMER.stem(t) for t in word_tokenize(doc)]
 
-def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords, vocabulary = None):
+def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords, vocabulary = None, max_df=800, min_df = 1, ngram_range=(1,2)):
 	stop_list = None
 	chosen_tokenizer = None
 	if remove_stopwords:
@@ -99,15 +99,16 @@ def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords,
 	vectorizer = None
 	if feature_type=='BINARY':
 		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, binary = True, dtype = np.float64,
-		 norm=None, use_idf=False, smooth_idf=False, vocabulary = vocabulary)
+		 norm=None, use_idf=False, smooth_idf=False, vocabulary = vocabulary, max_df = max_df, min_df=min_df, ngram_range=ngram_range)
 	elif feature_type =='TF':
 		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64, norm=None, 
-			use_idf=False, smooth_idf=False, vocabulary = vocabulary)
+			use_idf=False, smooth_idf=False, vocabulary = vocabulary, max_df = max_df, min_df=min_df, ngram_range=ngram_range)
 	elif feature_type =='LOG_TF':
 		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64, norm=None,
-		 use_idf=False, sublinear_tf=True, smooth_idf=False, vocabulary = vocabulary)
+		 use_idf=False, sublinear_tf=True, smooth_idf=False, vocabulary = vocabulary, max_df = max_df, min_df=min_df, ngram_range=ngram_range)
 	else:
-		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64, vocabulary = vocabulary)
+		vectorizer = TfidfVectorizer(lowercase=case_folding, tokenizer = chosen_tokenizer, stop_words=stop_list, dtype = np.float64, 
+			vocabulary = vocabulary, max_df = max_df, min_df=min_df, ngram_range=ngram_range)
 
 	featurized_docs_raw_format = vectorizer.fit_transform(documents)
 	
@@ -124,8 +125,8 @@ def random_forest_model(num_of_trees=10, max_depth=None, num_of_cores = 1):
 def multinomial_naive_bayes_model(alpha=1.0, fit_prior=True):
 	return MultinomialNB(alpha=alpha, fit_prior=fit_prior)
 
-def logistic_regression_model(max_iter=100, multi_class='ovr', num_of_cores = 1):
-	return LogisticRegression(max_iter=max_iter, multi_class=multi_class, n_jobs=num_of_cores)
+def logistic_regression_model(max_iter=100, multi_class='ovr', num_of_cores = 1, solver = 'liblinear'):
+	return LogisticRegression(max_iter=max_iter, multi_class=multi_class, n_jobs=num_of_cores, solver=solver)
 
 def linear_svc_model(max_iter=1000):
 	return LinearSVC(max_iter=max_iter)
@@ -284,18 +285,23 @@ def test(train_set, test_set, stem, case_folding, remove_stopwords):
 
 			
 			metrics = calculate_classifier_metrics(genres_metrics)
-			print metrics
 			json_data = {}
 			json_data['test_details'] = write_case_to_file(stem, case_folding, remove_stopwords, model_name, f_type)
 			json_data['genres_metrics'] = write_genre_metrics_to_file(genres_metrics)
 			json_data['classifier_metrics'] = write_classifier_metrics_to_file(metrics)
+			print json_data['test_details']
+			print metrics['general']['accuracy']
+			print metrics['micro']['f1']
+			print metrics['macro']['f1']
 			json_output.append(json_data)
 			
 	return json_output
 
 
-MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model(), 'LOGISTIC REGRESSION DEFAULT': logistic_regression_model(num_of_cores=2),
-'SVM DEFAULT': svc_model(C=23.0, gamma = 0.001), 'LINEAR SVM DEFAULT': linear_svc_model(), 'RANDOM FOREST DEFAULT': random_forest_model(num_of_trees = 100, num_of_cores=2)}
+MODELS = {'NAIVE BAYES DEFAULT': multinomial_naive_bayes_model(alpha=0.1), 
+'LOGISTIC REGRESSION DEFAULT': logistic_regression_model(solver='sag',num_of_cores=2),
+'SVM DEFAULT': svc_model(C=23.0, gamma = 0.001), 'LINEAR SVM DEFAULT': linear_svc_model(), 
+'RANDOM FOREST DEFAULT': random_forest_model(num_of_trees = 100, num_of_cores=2)}
 
 def experiment():
 	#PRE-PROCESS
