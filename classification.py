@@ -15,13 +15,14 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-M_FILENAME = 'metrics_file_tunning_done_new.json'
+M_FILENAME = 'metrics_file_tunning_done_no_punct.json'
 GENRES = ["Sertanejo", "Funk Carioca", u"Axé",  "MPB", "Samba"]
 PT_STOPWORDS = stopwords.words('portuguese')
 PT_STEMMER = RSLPStemmer()
 BOOLS = [True, False]
 EXPERIMENTS = [(stem, case_folding, remove_stopwords) for stem in BOOLS for case_folding in BOOLS for remove_stopwords in BOOLS]
 FEATURE_TYPES = ['BINARY', 'TF', 'LOG_TF', 'TF_IDF']
+PUNCTUATION = ['.', ',', ':', ';', '(', ')', '[', ']', '*']
 TEST_NUMBER = 0
 METRICS_FILE = open(M_FILENAME, 'w')
 
@@ -80,7 +81,7 @@ def tokenize_doc(doc):
 	return word_tokenize(doc)
 
 def stem_tokenizer(doc):
-	return [PT_STEMMER.stem(t) for t in word_tokenize(doc)]
+	return filter(lambda t: t not in PUNCTUATION, [PT_STEMMER.stem(t) for t in word_tokenize(doc)])
 
 def featurize_set(given_set, feature_type, stem, case_folding, remove_stopwords, vocabulary = None, max_df=800, min_df = 1, ngram_range=(1,2)):
 	stop_list = None
